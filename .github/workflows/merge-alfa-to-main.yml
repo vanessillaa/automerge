@@ -1,0 +1,43 @@
+name: Test & Auto-merge alfa -> main
+
+on:
+  push:
+    branches:
+      - alfa
+
+permissions:
+  contents: write   # necessari per poder fer push a main
+
+jobs:
+  test-and-merge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout alfa
+        uses: actions/checkout@v4
+        with:
+          ref: alfa
+          fetch-depth: 0
+
+      - name: Executar tests (run_tests.sh)
+        run: |
+          chmod +x ./run_tests.sh
+          ./run_tests.sh
+
+      - name: Configurar git
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "ci-bot@example.com"
+          # Això són dades inventades per donar a entendre que qui intenta fer el merge és el bot de Github Actions
+
+      - name: Merge alfa -> main i push
+        if: success()
+        run: |
+          git fetch origin main
+          git fetch origin alfa
+
+          git checkout main
+          git merge --no-ff origin/alfa -m "chore: auto-merge alfa into main (CI)"
+
+          git push origin main
